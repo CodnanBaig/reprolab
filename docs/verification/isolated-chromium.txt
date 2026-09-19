@@ -1,0 +1,13 @@
+test_01_actual_recorder_masks_inputs_and_captures_errors (__main__.MemoryBrowserTests.test_01_actual_recorder_masks_inputs_and_captures_errors) ... ok
+test_02_consent_and_teardown (__main__.MemoryBrowserTests.test_02_consent_and_teardown) ... ok
+test_03_inbox_desktop_mobile_layout (__main__.MemoryBrowserTests.test_03_inbox_desktop_mobile_layout) ... ok
+test_04_replay_and_mobile_layout (__main__.MemoryBrowserTests.test_04_replay_and_mobile_layout) ... ok
+test_05_triage_notes_and_html_escaping (__main__.MemoryBrowserTests.test_05_triage_notes_and_html_escaping) ... ok
+test_06_event_filter_and_export_ui (__main__.MemoryBrowserTests.test_06_event_filter_and_export_ui) ... ok
+test_07_authenticated_views_render_without_script_errors (__main__.MemoryBrowserTests.test_07_authenticated_views_render_without_script_errors) ... ok
+test_08_login_keyboard_and_mobile_layout (__main__.MemoryBrowserTests.test_08_login_keyboard_and_mobile_layout) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 13.461s
+
+OK

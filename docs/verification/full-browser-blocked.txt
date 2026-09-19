@@ -1,0 +1,9 @@
+Full browser journeys were attempted with:
+  python tests/browser_test.py
+
+Environment result:
+  Page.goto: net::ERR_BLOCKED_BY_ADMINISTRATOR at http://localhost:<ephemeral-port>/
+
+All 7 journeys were blocked at initial navigation by managed Chromium URL policy.
+These were not marked passed, skipped-as-success, or used for the isolated screenshot evidence.
+No browser policy was modified. Run the suite in a permitted development environment.

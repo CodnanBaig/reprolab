@@ -1,0 +1,506 @@
+
+> reprolab@0.1.0 check
+> npm run check:syntax && npm test && npm run build
+
+
+> reprolab@0.1.0 check:syntax
+> node scripts/check-syntax.mjs
+
+Browser/module syntax and recorder parity passed.
+
+> reprolab@0.1.0 test
+> node --experimental-strip-types --test tests/*.test.ts
+
+TAP version 13
+# (node:3582) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:3582) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# Subtest: HTTP API and ownership boundaries
+    # Subtest: reports database health
+    ok 1 - reports database health
+      ---
+      duration_ms: 45.132846
+      type: 'test'
+      ...
+    # Subtest: requires login to read projects
+    ok 2 - requires login to read projects
+      ---
+      duration_ms: 8.309432
+      type: 'test'
+      ...
+    # Subtest: rejects cross-origin registration
+    ok 3 - rejects cross-origin registration
+      ---
+      duration_ms: 25.338402
+      type: 'test'
+      ...
+    # Subtest: rejects short passwords
+    ok 4 - rejects short passwords
+      ---
+      duration_ms: 6.992913
+      type: 'test'
+      ...
+    # Subtest: registers with an HttpOnly SameSite session
+    ok 5 - registers with an HttpOnly SameSite session
+      ---
+      duration_ms: 128.950017
+      type: 'test'
+      ...
+    # Subtest: creates a project with an ingestion-only key
+    ok 6 - creates a project with an ingestion-only key
+      ---
+      duration_ms: 5.74818
+      type: 'test'
+      ...
+    # Subtest: never returns a raw key in project listing
+    ok 7 - never returns a raw key in project listing
+      ---
+      duration_ms: 3.43412
+      type: 'test'
+      ...
+    # Subtest: rejects an invalid capture key
+    ok 8 - rejects an invalid capture key
+      ---
+      duration_ms: 5.405906
+      type: 'test'
+      ...
+    # Subtest: rejects disallowed website origins
+    ok 9 - rejects disallowed website origins
+      ---
+      duration_ms: 5.834892
+      type: 'test'
+      ...
+    # Subtest: captures evidence without a dashboard cookie
+    ok 10 - captures evidence without a dashboard cookie
+      ---
+      duration_ms: 7.906068
+      type: 'test'
+      ...
+    # Subtest: makes identical upload retries idempotent
+    ok 11 - makes identical upload retries idempotent
+      ---
+      duration_ms: 10.218149
+      type: 'test'
+      ...
+    # Subtest: reads owned session and triages it
+    ok 12 - reads owned session and triages it
+      ---
+      duration_ms: 13.786461
+      type: 'test'
+      ...
+    # Subtest: creates investigation notes
+    ok 13 - creates investigation notes
+      ---
+      duration_ms: 4.928006
+      type: 'test'
+      ...
+    # Subtest: exports a regression-test draft
+    ok 14 - exports a regression-test draft
+      ---
+      duration_ms: 2.76322
+      type: 'test'
+      ...
+    # Subtest: enforces cross-user data isolation
+    ok 15 - enforces cross-user data isolation
+      ---
+      duration_ms: 122.279861
+      type: 'test'
+      ...
+    # Subtest: shares only a sanitized public view and supports revocation
+    ok 16 - shares only a sanitized public view and supports revocation
+      ---
+      duration_ms: 6.654331
+      type: 'test'
+      ...
+    # Subtest: rejects expired links
+    ok 17 - rejects expired links
+      ---
+      duration_ms: 4.046906
+      type: 'test'
+      ...
+    # Subtest: validates source maps before storing
+    ok 18 - validates source maps before storing
+      ---
+      duration_ms: 3.956088
+      type: 'test'
+      ...
+    # Subtest: symbolicates owner-visible stack traces
+    ok 19 - symbolicates owner-visible stack traces
+      ---
+      duration_ms: 7.569106
+      type: 'test'
+      ...
+    # Subtest: does not create GitHub issues without explicit confirmation or config
+    ok 20 - does not create GitHub issues without explicit confirmation or config
+      ---
+      duration_ms: 6.985198
+      type: 'test'
+      ...
+    # Subtest: denies GitHub writes outside the server allowlist before any external request
+    ok 21 - denies GitHub writes outside the server allowlist before any external request
+      ---
+      duration_ms: 5.878682
+      type: 'test'
+      ...
+    # Subtest: rotates ingestion keys without changing access rights
+    ok 22 - rotates ingestion keys without changing access rights
+      ---
+      duration_ms: 6.897698
+      type: 'test'
+      ...
+    # Subtest: rejects declared capture URLs outside project origins
+    ok 23 - rejects declared capture URLs outside project origins
+      ---
+      duration_ms: 2.449904
+      type: 'test'
+      ...
+    # Subtest: denies deleting another user session
+    ok 24 - denies deleting another user session
+      ---
+      duration_ms: 1.738897
+      type: 'test'
+      ...
+    # Subtest: deletes owned sessions and dependent events
+    ok 25 - deletes owned sessions and dependent events
+      ---
+      duration_ms: 3.391525
+      type: 'test'
+      ...
+    # Subtest: logs out and invalidates the server-side session
+    ok 26 - logs out and invalidates the server-side session
+      ---
+      duration_ms: 4.438034
+      type: 'test'
+      ...
+    # Subtest: rejects invalid login without issuing a session
+    ok 27 - rejects invalid login without issuing a session
+      ---
+      duration_ms: 58.936484
+      type: 'test'
+      ...
+    # Subtest: signs in an existing user after logout
+    ok 28 - signs in an existing user after logout
+      ---
+      duration_ms: 62.345906
+      type: 'test'
+      ...
+    # Subtest: requires explicit confirmation before deleting a project
+    ok 29 - requires explicit confirmation before deleting a project
+      ---
+      duration_ms: 14.915197
+      type: 'test'
+      ...
+    # Subtest: serves the SPA and sandbox without inline executable scripts
+    ok 30 - serves the SPA and sandbox without inline executable scripts
+      ---
+      duration_ms: 7.427358
+      type: 'test'
+      ...
+    1..30
+ok 1 - HTTP API and ownership boundaries
+  ---
+  duration_ms: 612.475577
+  type: 'suite'
+  ...
+# (node:3583) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:3583) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# Subtest: Privacy boundary
+    # Subtest: strips query, hash and URL userinfo
+    ok 1 - strips query, hash and URL userinfo
+      ---
+      duration_ms: 2.48644
+      type: 'test'
+      ...
+    # Subtest: redacts emails, long numerical IDs and UUID path segments
+    ok 2 - redacts emails, long numerical IDs and UUID path segments
+      ---
+      duration_ms: 0.447059
+      type: 'test'
+      ...
+    # Subtest: rejects non-HTTP URLs
+    ok 3 - rejects non-HTTP URLs
+      ---
+      duration_ms: 0.269203
+      type: 'test'
+      ...
+    # Subtest: redacts emails from error strings
+    ok 4 - redacts emails from error strings
+      ---
+      duration_ms: 4.283161
+      type: 'test'
+      ...
+    # Subtest: redacts authorization secrets
+    ok 5 - redacts authorization secrets
+      ---
+      duration_ms: 0.701457
+      type: 'test'
+      ...
+    # Subtest: redacts PAT and API token formats
+    ok 6 - redacts PAT and API token formats
+      ---
+      duration_ms: 0.202887
+      type: 'test'
+      ...
+    # Subtest: rejects selectors with private values or executable syntax
+    ok 7 - rejects selectors with private values or executable syntax
+      ---
+      duration_ms: 0.314543
+      type: 'test'
+      ...
+    # Subtest: accepts bounded static selectors
+    ok 8 - accepts bounded static selectors
+      ---
+      duration_ms: 0.460072
+      type: 'test'
+      ...
+    # Subtest: rejects CSS resource injection
+    ok 9 - rejects CSS resource injection
+      ---
+      duration_ms: 0.626033
+      type: 'test'
+      ...
+    1..9
+ok 2 - Privacy boundary
+  ---
+  duration_ms: 13.300222
+  type: 'suite'
+  ...
+# Subtest: Capture contract
+    # Subtest: accepts and sanitizes a real capture
+    ok 1 - accepts and sanitizes a real capture
+      ---
+      duration_ms: 1.456492
+      type: 'test'
+      ...
+    # Subtest: does not retain unknown input, network body or headers
+    ok 2 - does not retain unknown input, network body or headers
+      ---
+      duration_ms: 1.047675
+      type: 'test'
+      ...
+    # Subtest: rejects unknown versions
+    ok 3 - rejects unknown versions
+      ---
+      duration_ms: 0.643454
+      type: 'test'
+      ...
+    # Subtest: rejects empty captures
+    ok 4 - rejects empty captures
+      ---
+      duration_ms: 0.174158
+      type: 'test'
+      ...
+    # Subtest: rejects unbounded event counts
+    ok 5 - rejects unbounded event counts
+      ---
+      duration_ms: 0.16004
+      type: 'test'
+      ...
+    # Subtest: rejects arbitrary event kinds
+    ok 6 - rejects arbitrary event kinds
+      ---
+      duration_ms: 0.161866
+      type: 'test'
+      ...
+    # Subtest: clamps event times to session duration
+    ok 7 - clamps event times to session duration
+      ---
+      duration_ms: 0.538868
+      type: 'test'
+      ...
+    # Subtest: validates and normalizes exact origins
+    ok 8 - validates and normalizes exact origins
+      ---
+      duration_ms: 1.376843
+      type: 'test'
+      ...
+    # Subtest: rejects origin paths or credentials
+    ok 9 - rejects origin paths or credentials
+      ---
+      duration_ms: 0.190555
+      type: 'test'
+      ...
+    # Subtest: masks private frame text even when a client sends a value
+    ok 10 - masks private frame text even when a client sends a value
+      ---
+      duration_ms: 0.58693
+      type: 'test'
+      ...
+    1..10
+ok 3 - Capture contract
+  ---
+  duration_ms: 22.788676
+  type: 'suite'
+  ...
+# Subtest: Authentication primitives
+    # Subtest: hashes passwords with independent salts
+    ok 1 - hashes passwords with independent salts
+      ---
+      duration_ms: 274.662071
+      type: 'test'
+      ...
+    # Subtest: verifies correct passwords only
+    ok 2 - verifies correct passwords only
+      ---
+      duration_ms: 181.00809
+      type: 'test'
+      ...
+    # Subtest: rejects corrupt password digests
+    ok 3 - rejects corrupt password digests
+      ---
+      duration_ms: 0.187291
+      type: 'test'
+      ...
+    # Subtest: creates unpredictable token material and hashes
+    ok 4 - creates unpredictable token material and hashes
+      ---
+      duration_ms: 0.924878
+      type: 'test'
+      ...
+    1..4
+ok 4 - Authentication primitives
+  ---
+  duration_ms: 457.080038
+  type: 'suite'
+  ...
+# Subtest: Evidence exports
+    # Subtest: generates runnable Playwright structure with masked fixture placeholders
+    ok 1 - generates runnable Playwright structure with masked fixture placeholders
+      ---
+      duration_ms: 0.953642
+      type: 'test'
+      ...
+    # Subtest: escapes test titles instead of interpolating code
+    ok 2 - escapes test titles instead of interpolating code
+      ---
+      duration_ms: 0.123147
+      type: 'test'
+      ...
+    # Subtest: starts a regression draft at the initial captured route rather than the final SPA route
+    ok 3 - starts a regression draft at the initial captured route rather than the final SPA route
+      ---
+      duration_ms: 0.419658
+      type: 'test'
+      ...
+    # Subtest: exports a report with steps and failures
+    ok 4 - exports a report with steps and failures
+      ---
+      duration_ms: 0.722361
+      type: 'test'
+      ...
+    1..4
+ok 5 - Evidence exports
+  ---
+  duration_ms: 2.473691
+  type: 'suite'
+  ...
+# Subtest: Source maps
+    # Subtest: decodes positive and negative VLQ
+    ok 1 - decodes positive and negative VLQ
+      ---
+      duration_ms: 0.388715
+      type: 'test'
+      ...
+    # Subtest: rejects malformed VLQ
+    ok 2 - rejects malformed VLQ
+      ---
+      duration_ms: 0.375328
+      type: 'test'
+      ...
+    # Subtest: validates a flat v3 map
+    ok 3 - validates a flat v3 map
+      ---
+      duration_ms: 0.656545
+      type: 'test'
+      ...
+    # Subtest: rejects indexed or invalid maps
+    ok 4 - rejects indexed or invalid maps
+      ---
+      duration_ms: 0.455786
+      type: 'test'
+      ...
+    # Subtest: resolves generated positions and original source context
+    ok 5 - resolves generated positions and original source context
+      ---
+      duration_ms: 1.15127
+      type: 'test'
+      ...
+    1..5
+ok 6 - Source maps
+  ---
+  duration_ms: 3.526675
+  type: 'suite'
+  ...
+# Subtest: Persistent store
+    # Subtest: persists sanitized events atomically
+    ok 1 - persists sanitized events atomically
+      ---
+      duration_ms: 2.779216
+      type: 'test'
+      ...
+    # Subtest: deduplicates retries with the same client ID
+    ok 2 - deduplicates retries with the same client ID
+      ---
+      duration_ms: 0.476327
+      type: 'test'
+      ...
+    # Subtest: denies cross-owner project access
+    ok 3 - denies cross-owner project access
+      ---
+      duration_ms: 0.547789
+      type: 'test'
+      ...
+    # Subtest: denies cross-owner session access
+    ok 4 - denies cross-owner session access
+      ---
+      duration_ms: 0.606874
+      type: 'test'
+      ...
+    # Subtest: enforces ingestion rate limits
+    ok 5 - enforces ingestion rate limits
+      ---
+      duration_ms: 0.531288
+      type: 'test'
+      ...
+    # Subtest: retention cascades session evidence removal
+    ok 6 - retention cascades session evidence removal
+      ---
+      duration_ms: 0.604361
+      type: 'test'
+      ...
+    1..6
+ok 7 - Persistent store
+  ---
+  duration_ms: 6.690974
+  type: 'suite'
+  ...
+# Subtest: On-disk restart recovery
+    # Subtest: retains a complete recording after the database closes and reopens
+    ok 1 - retains a complete recording after the database closes and reopens
+      ---
+      duration_ms: 7.090974
+      type: 'test'
+      ...
+    1..1
+ok 8 - On-disk restart recovery
+  ---
+  duration_ms: 7.308594
+  type: 'suite'
+  ...
+1..8
+# tests 69
+# suites 8
+# pass 69
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1261.197003
+
+> reprolab@0.1.0 build
+> node scripts/build.mjs
+
+(node:3616) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+Built TypeScript server + browser application into dist/. No runtime packages required.

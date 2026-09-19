@@ -1,0 +1,45 @@
+name: Validate ReproLab
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.16.0
+      - name: Install optional static-analysis tooling
+        run: npm install --no-save --package-lock=false typescript@5.8.3 @types/node@24.0.4
+      - run: npm run typecheck
+      - run: npm run check:syntax
+      - run: npm run test:coverage
+      - run: npm run build
+  browser:
+    needs: quality
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.16.0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r tests/requirements.txt
+      - run: python -m playwright install --with-deps chromium
+      - name: Real localhost browser journeys
+        run: npm run test:browser
+      - name: Isolated recorder and UI checks
+        run: npm run test:browser:memory
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: browser-evidence
+          path: test-results/
+          retention-days: 7

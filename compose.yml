@@ -1,0 +1,16 @@
+services:
+  reprolab:
+    build: .
+    ports:
+      - "127.0.0.1:4318:4318"
+    environment:
+      APP_ORIGIN: http://localhost:4318
+      # Required only because the container binds internally to 0.0.0.0.
+      # Host publication remains loopback-only. Do not expose this as public plaintext.
+      ALLOW_INSECURE_LAN: "1"
+      RETENTION_DAYS: "14"
+    volumes:
+      - reprolab-data:/app/.data
+    restart: unless-stopped
+volumes:
+  reprolab-data:

@@ -1,0 +1,19 @@
+{
+  "mode": "operate",
+  "source": "public/app.css",
+  "review": "docs/VISUAL_REVIEW.md",
+  "tokens": {
+    "bg": "#f6f7fa",
+    "paper": "#ffffff",
+    "text": "#202d43",
+    "muted": "#657287",
+    "line": "#e3e7ee",
+    "accent": "#344ddc",
+    "accentSoft": "#edf0ff",
+    "error": "#b33c4b",
+    "errorSoft": "#fff0f2",
+    "success": "#19715c",
+    "rail": "#202d43",
+    "radius": "10px"
+  }
+}

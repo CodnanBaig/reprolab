@@ -1,0 +1,26 @@
+{
+  "name": "reprolab",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A privacy-first bug recorder, visual replay workbench and regression-test generator.",
+  "type": "module",
+  "engines": {
+    "node": ">=22.16.0"
+  },
+  "scripts": {
+    "dev": "node --env-file-if-exists=.env --experimental-strip-types --watch src/server.ts",
+    "start": "node --env-file-if-exists=.env --experimental-strip-types src/server.ts",
+    "build": "node scripts/build.mjs",
+    "start:built": "node --env-file-if-exists=.env dist/src/server.js",
+    "test": "node --experimental-strip-types --test tests/*.test.ts",
+    "test:coverage": "node --experimental-strip-types --experimental-test-coverage --test-coverage-exclude=\"tests/**\" --test tests/*.test.ts",
+    "test:browser": "python tests/browser_test.py",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run check:syntax && npm test && npm run build",
+    "publish:github": "bash scripts/publish-github.sh",
+    "test:browser:memory": "python tests/browser_memory_test.py",
+    "check:syntax": "node scripts/check-syntax.mjs",
+    "admin:reset-password": "node --env-file-if-exists=.env --experimental-strip-types scripts/admin.ts"
+  },
+  "license": "MIT"
+}

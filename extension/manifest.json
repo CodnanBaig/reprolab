@@ -1,0 +1,8 @@
+{
+  "manifest_version": 3,
+  "name": "ReproLab — Capture a bug",
+  "description": "Explicitly record sanitized bug evidence in the active tab and send it to your ReproLab instance.",
+  "version": "0.1.0",
+  "permissions": ["activeTab", "scripting", "storage"],
+  "action": { "default_popup": "popup.html", "default_title": "Record with ReproLab" }
+}
