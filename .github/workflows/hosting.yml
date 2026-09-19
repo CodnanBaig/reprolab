@@ -1,0 +1,33 @@
+name: Vercel adapter verification
+on:
+  push:
+    branches: [feat/vercel-durable-hosting]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: hosting-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  hosting:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Prepare initial pinned SDK lockfile
+        run: npm install --prefix hosting --package-lock-only --ignore-scripts
+      - name: Install hosted adapter dependencies
+        run: npm ci --prefix hosting
+      - name: Retain resolved lock and SDK for verification
+        run: tar -czf hosting-sdk.tar.gz hosting/package-lock.json hosting/node_modules
+      - uses: actions/upload-artifact@v4
+        with:
+          name: reprolab-hosting-sdk
+          path: hosting-sdk.tar.gz
+          retention-days: 3
