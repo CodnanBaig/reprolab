@@ -1,0 +1,4 @@
+{
+  "extends": "../tsconfig.json",
+  "include": ["../api/**/*.ts", "./client.ts", "./init.ts", "./adapter.test.ts", "./durability.test.ts"]
+}

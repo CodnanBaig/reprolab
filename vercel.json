@@ -1,0 +1,23 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "pnpm install --frozen-lockfile && npm ci --prefix hosting",
+  "buildCommand": "pnpm run typecheck && pnpm exec tsc --noEmit -p hosting/tsconfig.json && pnpm run check:syntax && pnpm run build",
+  "outputDirectory": "public",
+  "functions": { "api/index.ts": { "maxDuration": 60 } },
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "/api/index" },
+    { "source": "/sandbox", "destination": "/sandbox.html" }
+  ],
+  "headers": [
+    { "source": "/(.*)", "headers": [
+      { "key": "X-Content-Type-Options", "value": "nosniff" },
+      { "key": "Referrer-Policy", "value": "no-referrer" },
+      { "key": "X-Frame-Options", "value": "DENY" },
+      { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" },
+      { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self' data:; font-src 'self'; frame-src 'none'; frame-ancestors 'none'; object-src 'none'; base-uri 'none'; form-action 'self'" }
+    ] },
+    { "source": "/api/:path*", "headers": [{ "key": "Cache-Control", "value": "no-store" }] },
+    { "source": "/sdk/:path*", "headers": [{ "key": "Access-Control-Allow-Origin", "value": "*" }] }
+  ]
+}
