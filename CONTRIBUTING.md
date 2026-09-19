@@ -2,7 +2,7 @@
 
 Keep the recorder, privacy contract, storage, UI and test generator independently understandable. Changes to privacy defaults, auth, sharing, ingestion limits or export formats require regression tests and a documented compatibility decision.
 
-Run `npm run check`, `npm run typecheck` with the optional checker installed, and `npm run test:browser` in a permitted Chromium environment. Keep the isolated browser suite separately named; never present mocked transport as a real full-stack browser test.
+Run `pnpm install --frozen-lockfile`, `pnpm run check`, `pnpm run typecheck`, and `pnpm run test:browser` in a permitted Chromium environment. Keep the isolated browser suite separately named; never present mocked transport as a real full-stack browser test.
 
 The SDK lives at `public/sdk/reprolab.js`; copy changes into `extension/reprolab.js`. `check:syntax` enforces byte parity. Do not edit the intentionally minified sandbox error module without updating its example source map.
 

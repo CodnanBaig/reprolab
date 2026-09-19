@@ -22,11 +22,12 @@ This checklist tracks **v0.1**, not every possible feature of a future observabi
 
 ## Implemented, external acceptance still required
 
-- [ ] Run the seven actual browser journeys in an environment that permits localhost navigation.
+- [x] Publish the initial source snapshot privately to `CodnanBaig/reprolab`.
+- [x] Run the seven actual browser journeys in an environment that permits localhost navigation.
 - [ ] Install and test the unpacked Chrome extension on a real target, including CSP and reload lifecycle limitations.
 - [ ] Exercise explicit GitHub issue creation with a fine-grained allowlisted token and verify timeout/retry behavior.
 - [ ] Run the supplied Docker image/compose configuration and verify persistent volume restoration.
-- [ ] Publish `CodnanBaig/reprolab`; run and inspect remote CI on the pushed SHA.
+- [ ] Promote the release candidate to `main`; run and inspect remote CI on the exact release SHA.
 
 ## Deferred deliberately
 

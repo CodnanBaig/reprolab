@@ -11,13 +11,13 @@ ReproLab is a self-hosted browser bug workbench. Start a recording, reproduce th
 
 ## Run it
 
-Install **Node.js 22.16 or newer with `node:sqlite` support**, then:
+Install **Node.js 22.16 or newer with `node:sqlite` support** and **pnpm 10**, then:
 
 ```bash
-npm start
+pnpm start
 ```
 
-Open **http://localhost:4318**. No `npm install` is necessary to run the application: there are **zero runtime npm dependencies**. Node 22 may print experimental notices for SQLite and TypeScript stripping; they are expected on the tested version.
+Open **http://localhost:4318**. No dependency installation is necessary for this runtime command: the application has **zero runtime package dependencies**. Run `pnpm install --frozen-lockfile` before development checks so the pinned TypeScript tooling is available. Node 22 may print experimental notices for SQLite and TypeScript stripping; they are expected on the tested version.
 
 1. Choose **Create workspace** and create a local account. Passwords require at least 12 characters.
 2. Select **Record a session** to open the included Orbit Store sandbox.
@@ -32,11 +32,11 @@ The sandbox automatically creates its own project and ingestion key in your work
 For a compiled server:
 
 ```bash
-npm run build
-npm run start:built
+pnpm run build
+pnpm run start:built
 ```
 
-Development with restart-on-change: `npm run dev`. Runtime data is stored in `.data/reprolab.sqlite` and persists across restarts. Keep the database directory private and on a persistent disk.
+Development with restart-on-change: `pnpm run dev`. Runtime data is stored in `.data/reprolab.sqlite` and persists across restarts. Keep the database directory private and on a persistent disk.
 
 ## What works in this version
 
@@ -113,7 +113,7 @@ Generated files contain real `@playwright/test` structure, captured selectors, s
 # In your target application's existing Playwright project:
 REPRO_START_URL=http://localhost:3000/checkout \
 REPRO_INPUT_1=test@example.org \
-npx playwright test repro-example.spec.js
+pnpm exec playwright test repro-example.spec.js
 ```
 
 Authenticated apps require your own `storageState`. Replace the generic settle wait with an application-specific assertion. The deliberately broken sandbox should fail a properly configured regression test until its bug is fixed. ReproLab **does not run arbitrary uploaded/generated tests on the server** or pretend to infer the correct business outcome.
@@ -139,40 +139,40 @@ cp .env.example .env
 # Edit .env locally; never commit it:
 # GITHUB_TOKEN=<a fine-grained token limited to the intended repository>
 # GITHUB_ALLOWED_REPOS=CodnanBaig/reprolab
-npm start
+pnpm start
 ```
 
 Set the same `owner/repo` in Project settings. Review the exported report, then explicitly confirm **Create GitHub issue**. Tokens stay server-side. Config/permission errors do not block Markdown export. Live authenticated issue creation was not exercised during this build. A network failure after GitHub accepts a request may require checking GitHub before retrying; cross-system exactly-once delivery is not claimed.
 
 ## Verification
 
-The included [build report](BUILD_REPORT.md) separates evidence:
+The dated [build report](BUILD_REPORT.md) separates the original build evidence from later publication status:
 
 - **69 Node tests passed**: unit tests plus real localhost HTTP/SQLite integration and ownership/security tests.
 - **8 isolated Chromium tests passed**: actual recorder and UI with synthetic transport; includes input masking, replay, triage, notes, and responsive layout.
 - Strict server/test TypeScript checks, browser JS syntax checks, SDK/extension parity, and a compiled build passed.
-- **7 full browser journeys are included but were blocked here** by the environment's managed Chromium URL-navigation policy. They have **not** been marked passed.
+- **7 full browser journeys passed locally on 2026-09-19** against a disposable localhost server and SQLite database. The dated build report preserves the earlier managed-browser block and the later successful rerun separately.
 - No extension installation, authenticated GitHub side effect, Docker runtime, public deployment, or remote GitHub Actions run is claimed.
 
 ```bash
-npm test
-npm run test:coverage
-npm run check
-
-# Optional static development tooling (not needed at runtime):
-npm install --no-save --package-lock=false typescript@5.8.3 @types/node@24.0.4
-npm run typecheck
+pnpm install --frozen-lockfile
+pnpm test
+pnpm run test:coverage
+pnpm run check
+pnpm run typecheck
 
 # Browser verification in an unrestricted local development environment:
-python -m pip install -r tests/requirements.txt
-python -m playwright install chromium
-npm run test:browser
+python3 -m venv .venv
+source .venv/bin/activate
+python3 -m pip install -r tests/requirements.txt
+python3 -m playwright install chromium
+pnpm run test:browser
 
 # Separate isolated-browser suite, NOT a substitute for full journeys:
-npm run test:browser:memory
+pnpm run test:browser:memory
 ```
 
-CI is configured in `.github/workflows/ci.yml`. It becomes executable after repository publication; a workflow file is not evidence of a passing remote run.
+CI is configured in `.github/workflows/ci.yml` for every push and pull request. Check GitHub Actions for the exact commit before treating the remote build as passed; the workflow file alone is not evidence.
 
 ## Architecture
 
@@ -192,17 +192,18 @@ Instrumented app / manual extension
 
 See [architecture and trade-offs](docs/ARCHITECTURE.md), [API contract](docs/API.md), [security](SECURITY.md), [operations](docs/OPERATIONS.md), [test strategy](docs/TESTING.md), and [remaining scope](ROADMAP.md).
 
-## Publish the source to GitHub
+## Repository
 
-This delivery is a local source package, **not a claim that a remote repository was created**. The publishing helper verifies the authenticated GitHub account and refuses to overwrite an existing repository.
+The source is hosted in the private [`CodnanBaig/reprolab`](https://github.com/CodnanBaig/reprolab) repository. Clone and run it with:
 
 ```bash
-gh auth login
-bash scripts/publish-github.sh --private
-# Use --public instead only when you intentionally want the source public.
+git clone https://github.com/CodnanBaig/reprolab.git
+cd reprolab
+pnpm install --frozen-lockfile
+pnpm start
 ```
 
-The helper targets `CodnanBaig/reprolab`, runs the local checks, creates the repository, and pushes `main`. It never pushes `.env`, `.data`, test databases, or `node_modules`. Review the files before opting into publication.
+The repository remains private and is not a hosted ReproLab service. Local `.env` files, databases, test artifacts, dependencies and compiled output are ignored.
 
 ## License
 

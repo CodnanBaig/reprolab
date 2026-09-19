@@ -45,7 +45,7 @@ Foreign keys cascade evidence deletion. WAL enables ordinary local concurrent re
 
 ### Zero runtime dependencies, not framework maximalism
 
-The environment could execute Node and TypeScript but could not download npm packages. This implementation uses built-in Node HTTP/SQLite and browser standards, so the delivered code can run without pretending that unavailable dependencies were installed. Server contracts are strict TypeScript. The frontend/SDK are JavaScript with parse checks and browser tests, not a Next.js/React application.
+The initial environment could execute Node and TypeScript but could not download third-party packages. This implementation uses built-in Node HTTP/SQLite and browser standards, so the runtime does not depend on an unavailable framework stack. Server contracts are strict TypeScript. The frontend/SDK are JavaScript with parse checks and browser tests, not a Next.js/React application.
 
 A future UI port can keep the data, privacy and recorder contracts. It is not required for the implemented workflow. Do not market the framework choice as a performance benchmark; none was measured.
 

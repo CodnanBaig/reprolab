@@ -5,8 +5,9 @@ Tests distinguish business logic, HTTP/storage integration, isolated browser beh
 ## Node unit and API tests
 
 ```bash
-npm test
-npm run test:coverage
+pnpm install --frozen-lockfile
+pnpm test
+pnpm run test:coverage
 ```
 
 `tests/core.test.ts` exercises redaction, URL sanitization, capture bounds, selectors, password hashing, regression draft escaping/fixtures, source-map decoding, persistence, upload deduplication and retention.
@@ -20,29 +21,31 @@ Coverage uses Node's V8 instrumentation, excludes `tests/**`, and covers only th
 ## Static/build checks
 
 ```bash
-npm run check:syntax
-npm run build
-npm run typecheck
+pnpm run check:syntax
+pnpm run build
+pnpm run typecheck
 ```
 
-Syntax checks parse browser/extension/tool scripts and ensure the extension's recorder bytes match the SDK. Build strips erasable TypeScript, rewrites relative module extensions, and copies the browser app. It is not a typechecker. Strict typechecking requires the explicitly documented optional TypeScript/@types tooling.
+Syntax checks parse browser/extension/tool scripts and ensure the extension's recorder bytes match the SDK. Build strips erasable TypeScript, rewrites relative module extensions, and copies the browser app. It is not a typechecker. Strict typechecking uses the pinned TypeScript and Node types in `devDependencies`.
 
 ## Full browser journeys
 
 ```bash
-python -m pip install -r tests/requirements.txt
-python -m playwright install chromium
-npm run test:browser
+python3 -m venv .venv
+source .venv/bin/activate
+python3 -m pip install -r tests/requirements.txt
+python3 -m playwright install chromium
+pnpm run test:browser
 ```
 
 The suite runs against a disposable real localhost server/database, creates only synthetic users and records the actual sandbox. It is intended to verify capture → upload → persisted session → replay → export, sharing, map upload, deletion/logout and responsive behavior.
 
-These 7 journeys were attempted during the initial build but blocked by a managed Chromium `URLBlocklist` policy. Do not disable corporate/browser security policies to force them through. Run on a permitted local development profile/environment instead. **No full-journey pass is claimed for this delivery.**
+These 7 journeys were attempted during the initial build but blocked by a managed Chromium `URLBlocklist` policy. They were rerun successfully on 2026-09-19 in a permitted local Playwright Chromium environment. Do not disable corporate/browser security policies to force them through; use a permitted development profile/environment instead.
 
 ## Isolated Chromium suite
 
 ```bash
-npm run test:browser:memory
+pnpm run test:browser:memory
 ```
 
 `tests/browser_memory_test.py` uses an in-memory document and synthetic transport. It loads the actual SDK and actual UI source, inlines the authored local stylesheet/icon, performs user actions, captures the actual visual-node sequence, and exercises rendering/controls.
@@ -53,6 +56,6 @@ The screenshots in `docs/screenshots/` were made by this isolated suite. They sh
 
 ## CI
 
-`.github/workflows/ci.yml` runs static, strict-type, unit/API, build and full browser checks after publication. Python Playwright is pinned. Node is pinned to the locally verified major/minor. A failure blocks the workflow; the workflow does not ignore the browser job merely because this delivery environment was restricted.
+`.github/workflows/ci.yml` runs static, strict-type, unit/API, build and full browser checks on every push and pull request. pnpm, Python Playwright and Node are pinned. A failure blocks the workflow; the workflow does not ignore the browser job merely because the initial delivery environment was restricted.
 
-No remote GitHub Actions run exists yet because publication was unavailable in this session. See BUILD_REPORT.md for the actual command results.
+Use GitHub Actions as the source of truth for remote results on the exact commit. See BUILD_REPORT.md for the dated local command results and their evidence boundary.

@@ -2,11 +2,11 @@
 
 ## Local configuration
 
-`npm start`, `npm run dev` and `npm run start:built` load `.env` when present. With no `.env`, the defaults are localhost port 4318 and `.data/reprolab.sqlite`.
+`pnpm start`, `pnpm run dev` and `pnpm run start:built` load `.env` when present. With no `.env`, the defaults are localhost port 4318 and `.data/reprolab.sqlite`.
 
 ```bash
 cp .env.example .env
-npm start
+pnpm start
 ```
 
 Keep the browser origin identical to `APP_ORIGIN`; `localhost` and `127.0.0.1` are different origins. If you change `PORT`, change `APP_ORIGIN` too. Do not commit `.env` or the database.
@@ -44,9 +44,10 @@ There is no hosted email-reset provider. The server operator can use:
 ```bash
 # Prefer a secure environment/secrets mechanism rather than recording a real password in shell history.
 export REPRO_RESET_EMAIL='your-local-account@example.org'
-read -r -s -p 'New password: ' REPRO_RESET_PASSWORD; echo
+printf 'New password: '
+IFS= read -r -s REPRO_RESET_PASSWORD; printf '\n'
 export REPRO_RESET_PASSWORD
-npm run admin:reset-password
+pnpm run admin:reset-password
 unset REPRO_RESET_PASSWORD REPRO_RESET_EMAIL
 ```
 

@@ -1,6 +1,6 @@
 
 > reprolab@0.1.0 check
-> npm run check:syntax && npm test && npm run build
+> pnpm run check:syntax && pnpm test && pnpm run build
 
 
 > reprolab@0.1.0 check:syntax
