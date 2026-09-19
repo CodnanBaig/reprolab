@@ -1,7 +1,7 @@
 name: Vercel adapter verification
 on:
   push:
-    branches: [feat/vercel-durable-hosting]
+    branches: [feat/vercel-durable-hosting, main, feature/initial-source-publication]
   pull_request:
   workflow_dispatch:
 permissions:
@@ -17,17 +17,29 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Prepare initial pinned SDK lockfile
-        run: npm install --prefix hosting --package-lock-only --ignore-scripts
-      - name: Install hosted adapter dependencies
-        run: npm ci --prefix hosting
-      - name: Retain resolved lock and SDK for verification
-        run: tar -czf hosting-sdk.tar.gz hosting/package-lock.json hosting/node_modules
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: npm ci --prefix hosting
+      - run: pnpm run typecheck
+      - run: pnpm exec tsc --noEmit -p hosting/tsconfig.json
+      - run: pnpm run check:syntax
+      - name: Original, async adapter and durability contracts
+        run: node --experimental-strip-types --test tests/*.test.ts hosting/*.test.ts
+      - run: pnpm run build
+      - name: Hosted dependency advisory check
+        run: npm audit --prefix hosting --omit=dev --audit-level=high
+      - name: Retain exact non-secret source candidate
+        run: |
+          mkdir -p test-artifacts/hosting
+          git rev-parse HEAD > test-artifacts/hosting/commit.txt
+          git archive --format=tar.gz HEAD > test-artifacts/hosting/source.tar.gz
+          sha256sum test-artifacts/hosting/source.tar.gz > test-artifacts/hosting/checksums.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: reprolab-hosting-sdk
-          path: hosting-sdk.tar.gz
-          retention-days: 3
+          name: reprolab-vercel-candidate-${{ github.run_id }}
+          path: test-artifacts/hosting/
+          retention-days: 7
