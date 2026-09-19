@@ -152,7 +152,7 @@ The dated [build report](BUILD_REPORT.md) separates the original build evidence 
 - **8 isolated Chromium tests passed**: actual recorder and UI with synthetic transport; includes input masking, replay, triage, notes, and responsive layout.
 - Strict server/test TypeScript checks, browser JS syntax checks, SDK/extension parity, and a compiled build passed.
 - **7 full browser journeys passed locally on 2026-09-19** against a disposable localhost server and SQLite database. The dated build report preserves the earlier managed-browser block and the later successful rerun separately.
-- No extension installation, authenticated GitHub side effect, Docker runtime, public deployment, or remote GitHub Actions run is claimed.
+- GitHub Actions passed both quality and browser jobs on the private publication branch on 2026-09-19. No `main` release run, extension installation, authenticated GitHub issue side effect, Docker runtime or public deployment is claimed.
 
 ```bash
 pnpm install --frozen-lockfile

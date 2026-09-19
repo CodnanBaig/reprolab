@@ -58,4 +58,4 @@ The screenshots in `docs/screenshots/` were made by this isolated suite. They sh
 
 `.github/workflows/ci.yml` runs static, strict-type, unit/API, build and full browser checks on every push and pull request. pnpm, Python Playwright and Node are pinned. A failure blocks the workflow; the workflow does not ignore the browser job merely because the initial delivery environment was restricted.
 
-Use GitHub Actions as the source of truth for remote results on the exact commit. See BUILD_REPORT.md for the dated local command results and their evidence boundary.
+Use GitHub Actions as the source of truth for remote results on the exact commit. The publication-branch quality and browser jobs passed on 2026-09-19; a `main` release run is still outstanding. See BUILD_REPORT.md for the dated local command results and their evidence boundary.

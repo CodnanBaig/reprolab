@@ -37,7 +37,7 @@ Committed screenshots are real Chromium renders of synthetic fixtures. They are 
 
 ## External behavior not claimed
 
-- The source is published privately on GitHub. No public release, production deployment or passing remote CI run is claimed by this dated build report.
+- The source is published privately on GitHub. A follow-up publication-branch GitHub Actions run passed its quality and browser jobs on 2026-09-19; no `main` release run, public release or production deployment is claimed.
 - No successful live GitHub issue side effect. Configuration/origin/ownership/confirmation/allowlist guards were tested locally.
 - No Chrome extension installation or store release. Source and matching SDK were included and syntax checked.
 - No Docker runtime verification. Dockerfile/compose are supplied, not reported as run.
