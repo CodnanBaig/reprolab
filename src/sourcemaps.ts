@@ -1,4 +1,4 @@
-import { HttpError } from './validation.ts';
+import { HttpError } from './validation';
 export interface SourceMap {
     version: 3;
     sources: string[];

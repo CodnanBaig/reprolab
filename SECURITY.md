@@ -1,60 +1,40 @@
 # Security and privacy boundary
 
-ReproLab v0.1 is a self-hosted developer prototype, not a security-certified public SaaS. Use synthetic recording data until you have reviewed its behavior in your own application.
+ReproLab v0.1 is a private developer prototype, not a security-certified public SaaS. Use synthetic recording data until you have reviewed it in your own application.
 
 ## Defaults
 
-- Loopback-only server binding by default. No third-party runtime services.
-- Salted scrypt password hashes; random opaque session tokens stored hashed in SQLite.
-- HttpOnly, SameSite=Strict cookies. `COOKIE_SECURE=1` is required behind remote HTTPS.
-- Mutating dashboard API calls must originate from the exact configured `APP_ORIGIN`.
-- Every project, session, note, map, and export lookup verifies ownership server-side.
-- Ingestion keys permit submissions, not reads. They are stored hashed and can be rotated.
-- Prepared SQL statements and explicit field selection; no user-supplied SQL or script evaluation.
-- Uploaded captures are validated and reconstructed into a closed allowlist of event fields.
-- Canvas replay never executes recorded HTML or scripts. Static responses use CSP, no-referrer, nosniff, and frame restrictions.
-- Login attempts and ingestions are rate-limited. Sessions, events, byte size, project count, viewport geometry and duration have explicit bounds.
+- Next.js Route Handlers run in the Node.js runtime; MongoDB and all credentials are server-only.
+- `MONGODB_URI` belongs in `.env.local` or the deployment secret store. Never use a `NEXT_PUBLIC_` name for it or commit it.
+- Passwords use salted scrypt hashes. Opaque session and share tokens are random and stored only as hashes.
+- Cookies are `HttpOnly` and `SameSite=Strict`; set `COOKIE_SECURE=1` behind HTTPS.
+- Mutating dashboard requests must come from the exact configured `APP_ORIGIN`.
+- Every project, session, note, map, export, and share lookup validates ownership or its restricted bearer capability.
+- Ingestion keys permit submissions, not reads. They are hashed, scoped to exact origins, and rotateable.
+- Captures are closed-schema validated, byte-bounded, rate-limited, and reconstructed as canvas nodes rather than executed HTML.
 
 ## Recording data
 
-The shipped recorder does not read input values, cookies, authorization headers, request/response bodies, or raw DOM HTML. Input-change events include only selector/type and a redacted marker. Normal text is masked; direct text nodes must opt in with `data-repro-public`. A private ancestor wins over public opt-in. Images are not downloaded or embedded into capture data.
+The recorder does not read input values, cookies, authorization headers, request/response bodies, raw DOM HTML, video, or screenshots. Input events include only selector/type plus a redacted marker. Text is masked unless direct text nodes opt in with `data-repro-public`; a private ancestor wins.
 
-Error messages, log strings, URLs and voluntarily public text are passed through email/token/long-number scrubbing. **This is not universal PII detection.** Application-specific names, identifiers embedded in unconventional paths, free-form personal details in errors, or improperly opted-in text may remain. Review captures before sharing, use `data-repro-private`, and do not instrument payment/medical/password-manager surfaces in v0.1.
+URL, error, log, and public-text values receive email/token/long-number scrubbing. This is defense in depth, not universal PII detection. Review captures before sharing, use `data-repro-private`, and do not instrument payment, medical, password-manager, or other high-risk surfaces in v0.1.
 
-Capture input values are dropped server-side even if a malicious client sends an extra `value` field. A malicious uploader can still deliberately put sensitive prose into allowed message/public-text fields. The server is not an exfiltration-prevention system.
+## MongoDB and deployment
 
-## Ingestion trust
+MongoDB Atlas encrypts traffic to the deployment through its TLS connection string. Encryption at rest, database users, Atlas network access, backups, and retention are deployment controls: configure least-privilege database credentials and an IP/network allowlist appropriate to the host. The application creates indexes for uniqueness and expiry but does not manage Atlas access policy.
 
-A browser SDK key cannot be kept secret from a person controlling that browser. CORS and origin checks reduce accidental cross-site ingestion, but a non-browser client can forge an Origin header. Do not give the key read privileges, use a narrowly scoped project, rotate on abuse, and review rate limits before wider exposure. No signed per-visitor ingestion token system is implemented yet.
+The capture model contains password hashes, hashed tokens, evidence, notes, and source maps. Restrict database access and back it up through your Atlas backup policy. Deleting a project or session triggers application-managed cleanup of its dependent documents; source maps are removed with their project, not ordinary session retention.
 
-## Shares and exports
+## Sharing and exports
 
-Shares are bearer capabilities. Anyone holding an unexpired link can view its sanitized capture. Default 24 hours; configurable 1–168 hours; the owner can revoke all links for a session. Notes, source maps, project/client IDs and the created GitHub issue URL are excluded from the shared response. Revocation cannot retract a screenshot or already-downloaded evidence. API responses are `no-store` and use a `no-referrer` policy.
+Shares are bearer capabilities. Anyone with an unexpired link can view its sanitized capture. Default duration is 24 hours, configurable from 1–168; the owner can revoke all session links. Notes, source maps, project/client IDs, and created GitHub issue URLs are excluded from shared responses.
 
-JSON/Markdown/Playwright files can contain opted-in text, selectors and redacted error context. They are owner-requested downloads, not inherently safe for arbitrary public posting. Review them.
-
-## Source maps
-
-Uploaded maps are private to the project owner and may contain full source snippets. They are never sent to an LLM, fetched from arbitrary remote URLs, or included in public recordings. Keep the SQLite file secure. Delete the project to remove its maps. Session retention does not automatically delete project source maps.
+JSON, Markdown, and Playwright exports may contain opted-in text, selectors, and redacted error context. Review them before posting anywhere public.
 
 ## GitHub integration
 
-Disabled without a server-side token and `GITHUB_ALLOWED_REPOS`. The server restricts outbound writes to GitHub's fixed API host, an exact allowed repository, explicit user confirmation and a rate limit. Use a fine-grained token scoped only to the intended repository. Treat all users on a token-enabled installation as trusted collaborators; there is no per-user GitHub OAuth installation model yet.
+This is disabled unless a server-side `GITHUB_TOKEN` and exact `GITHUB_ALLOWED_REPOS` allowlist are configured. The handler allows only explicit confirmation, the fixed GitHub API host, an allowlisted repository, and a rate-limited request. A saved issue URL prevents ordinary duplicate clicks, but cross-system exactly-once delivery under timeouts is not guaranteed.
 
-No GitHub token enters the client bundle, recorder, extension, capture database events, or generated issue. A saved `github_url` avoids ordinary repeat submissions. Cross-system exactly-once behavior under timeouts or concurrent clicks is not guaranteed.
+## Known gaps
 
-## Persistence, access and deployment
-
-SQLite is not encrypted by the application. Use a locked device, restricted filesystem permissions, encrypted disks where appropriate, and encrypted backups. The database holds password hashes, session-token hashes, evidence, notes and map data. Hashes are not plain-text credentials, but they still require protection.
-
-Registration is available to anyone who can reach the server; v0.1 is intended for a trusted local/private environment. Before an internet launch add an enrollment policy, recovery/email verification, security review, operational quotas, production monitoring, and load testing. The in-process server and synchronous database are deliberately bounded but not designed to withstand untrusted internet-scale load.
-
-Never deploy the SQLite instance to an ephemeral serverless filesystem. Network exposure requires HTTPS and a persistent disk. A LAN testing override exists, but does not make plaintext transport safe.
-
-## Report an issue
-
-For a private deployment, report to its operator. Do not paste passwords, tokens, raw source maps or private captures into public issues. After this repository is published, enable GitHub private vulnerability reporting before accepting external vulnerability reports.
-
-## Known verification gaps
-
-See BUILD_REPORT.md. Unit/API isolation tests pass, but unrestricted browser journeys, a live GitHub token flow, extension installation, and a public deployment have not been verified in the build environment. Do not interpret the tests as a penetration test or certification.
+Registration is intended only for trusted/private environments. An internet-facing release still needs enrollment policy, email verification/recovery, monitoring, quotas, load testing, a security review, and production browser validation. The extension and authenticated GitHub side effect require direct acceptance testing.

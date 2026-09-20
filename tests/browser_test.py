@@ -1,11 +1,10 @@
-"""Real Chromium journeys against a disposable localhost database. No production writes."""
+"""Real Chromium journeys against a disposable MongoDB database. No production writes."""
 import json
 import os
 from pathlib import Path
 import shutil
 import socket
 import subprocess
-import tempfile
 import time
 import unittest
 from urllib.request import urlopen
@@ -14,19 +13,33 @@ from playwright.sync_api import sync_playwright, expect
 ROOT = Path(__file__).resolve().parents[1]
 RESULTS = ROOT / 'test-results'
 
+def local_env_value(name):
+    path = ROOT / '.env.local'
+    if not path.exists():
+        return None
+    for line in path.read_text().splitlines():
+        key, separator, value = line.partition('=')
+        if separator and key.strip() == name:
+            return value.strip()
+    return None
+
 class BrowserJourneys(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         RESULTS.mkdir(exist_ok=True)
-        cls.temp = tempfile.TemporaryDirectory()
         with socket.socket() as sock:
             sock.bind(('127.0.0.1', 0))
             cls.port = sock.getsockname()[1]
         cls.base = f'http://localhost:{cls.port}'
         cls.log = open(RESULTS / 'browser-server.log', 'w')
-        env = {**os.environ, 'PORT': str(cls.port), 'APP_ORIGIN': cls.base,
-               'DATABASE_PATH': str(Path(cls.temp.name) / 'test.sqlite'), 'HOST': '127.0.0.1'}
-        cls.process = subprocess.Popen(['node', '--experimental-strip-types', 'src/server.ts'], cwd=ROOT, env=env, stdout=cls.log, stderr=cls.log)
+        mongo_uri = os.environ.get('MONGODB_URI') or local_env_value('MONGODB_URI')
+        if not mongo_uri:
+            raise RuntimeError('Set MONGODB_URI before running the MongoDB-backed browser journeys.')
+        cls.database = f"reprolab_browser_{time.time_ns()}"
+        cls.mongo_uri = mongo_uri
+        env = {**os.environ, 'MONGODB_URI': mongo_uri, 'PORT': str(cls.port), 'APP_ORIGIN': cls.base,
+               'MONGODB_DB': cls.database}
+        cls.process = subprocess.Popen(['pnpm', 'exec', 'next', 'dev', '--port', str(cls.port)], cwd=ROOT, env=env, stdout=cls.log, stderr=cls.log)
         for _ in range(60):
             try:
                 urlopen(cls.base + '/api/health', timeout=1).close()
@@ -46,7 +59,7 @@ class BrowserJourneys(unittest.TestCase):
         cls.process.terminate()
         cls.process.wait(timeout=10)
         cls.log.close()
-        cls.temp.cleanup()
+        subprocess.run(['node', '--input-type=module', '--eval', "import { MongoClient } from 'mongodb'; const client = new MongoClient(process.env.MONGODB_URI); await client.connect(); await client.db(process.env.REPROLAB_TEST_DATABASE).dropDatabase(); await client.close();"], cwd=ROOT, env={**os.environ, 'MONGODB_URI': cls.mongo_uri, 'REPROLAB_TEST_DATABASE': cls.database}, check=True)
 
     def setUp(self):
         self.context = self.browser.new_context(viewport={'width': 1440, 'height': 1000})
@@ -133,6 +146,7 @@ class BrowserJourneys(unittest.TestCase):
             expect(view.get_by_text('Shared · read-only', exact=True)).to_be_visible()
             expect(view.get_by_role('button', name='Delete recording', exact=True)).to_have_count(0)
             self.page.get_by_role('button', name='Revoke existing links').click()
+            expect(self.page.locator('#toast')).to_contain_text('All existing share links revoked.')
             view.reload()
             expect(view.get_by_role('heading', name='This link is no longer available.')).to_be_visible()
         finally:
@@ -178,12 +192,14 @@ class BrowserJourneys(unittest.TestCase):
 
     def test_06_recorder_requires_consent_and_stops_cleanly(self):
         self.page.goto(self.base + '/sandbox')
+        self.page.wait_for_function('() => Boolean(window.ReproLab)')
         result = self.page.evaluate("""() => {
           try { ReproLab.start({endpoint: location.origin + '/api/ingest'}); return false; }
           catch (e) { return e.message.includes('consent'); }
         }""")
         self.assertTrue(result)
         self.page.get_by_role('button', name='Start recording', exact=True).click()
+        self.page.wait_for_function('() => Boolean(window.ReproLab.active)')
         self.page.get_by_test_id('add-to-bag').click()
         self.page.evaluate('ReproLab.active.stop()')
         count = self.page.evaluate('ReproLab.active.eventCount')

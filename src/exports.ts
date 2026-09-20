@@ -1,4 +1,4 @@
-import type { CaptureEvent, StoredSession } from './types.ts';
+import type { CaptureEvent, StoredSession } from './types';
 const literal = (s: unknown) => JSON.stringify(String(s ?? ''));
 export function generatePlaywright(session: Pick<StoredSession, 'url' | 'title'>, events: CaptureEvent[]) {
     let input = 0;

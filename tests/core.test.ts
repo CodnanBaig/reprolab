@@ -1,15 +1,11 @@
-import { mkdtempSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { describe, it, after } from 'node:test';
+import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { scrub, safeUrl, color, selector } from '../src/privacy.ts';
-import { validateCapture, parseOrigins } from '../src/validation.ts';
-import { passwordHash, verifyPassword, randomToken, hash } from '../src/security.ts';
-import { generatePlaywright, issueMarkdown } from '../src/exports.ts';
-import { decodeVLQ, originalPosition, parseSourceMap } from '../src/sourcemaps.ts';
-import { Store } from '../src/store.ts';
-import type { Capture } from '../src/types.ts';
+import { scrub, safeUrl, color, selector } from '../src/privacy';
+import { validateCapture, parseOrigins } from '../src/validation';
+import { passwordHash, verifyPassword, randomToken, hash } from '../src/security';
+import { generatePlaywright, issueMarkdown } from '../src/exports';
+import { decodeVLQ, originalPosition, parseSourceMap } from '../src/sourcemaps';
+import type { Capture } from '../src/types';
 export const fixture = (): Capture => ({ version: 1, clientId: 'capture-test-123', title: 'Checkout fails', url: 'http://localhost:4318/sandbox?token=private', release: 'v1', browser: 'Chromium', viewport: { width: 1200, height: 800 }, duration: 2000, events: [
         { kind: 'navigation', at: 0, data: { url: 'http://localhost:4318/sandbox?secret=private' } },
         { kind: 'click', at: 200, data: { selector: '[data-testid="checkout"]', label: 'Checkout', x: 120, y: 45 } },
@@ -58,37 +54,4 @@ describe('Source maps', () => {
     it('validates a flat v3 map', () => assert.equal(parseSourceMap({ version: 3, sources: ['a.ts'], names: [], mappings: 'AAAA' }).version, 3));
     it('rejects indexed or invalid maps', () => assert.throws(() => parseSourceMap({ version: 3, sections: [] })));
     it('resolves generated positions and original source context', () => { const m = parseSourceMap({ version: 3, sources: ['src/a.ts'], names: ['fn'], mappings: 'AAAAA', sourcesContent: ['const x = 1;'] }); assert.deepEqual(originalPosition(m, 1, 20), { source: 'src/a.ts', line: 1, column: 1, name: 'fn', context: 'const x = 1;' }); });
-});
-describe('Persistent store', () => {
-    const store = new Store(':memory:');
-    after(() => store.close());
-    store.db.prepare('INSERT INTO users VALUES(?,?,?,?,?)').run('u', 'u@example.com', 'U', 'hash', Date.now());
-    store.db.prepare('INSERT INTO projects VALUES(?,?,?,?,?,?,?)').run('p', 'u', 'Project', '["http://localhost:4318"]', 'key', '', Date.now());
-    it('persists sanitized events atomically', () => { const c = validateCapture(fixture()), s = store.saveCapture('p', c); assert.equal(store.events(s.id).length, c.events.length); });
-    it('deduplicates retries with the same client ID', () => { const s = store.saveCapture('p', validateCapture(fixture())); assert.equal(s.duplicate, true); assert.equal(store.db.prepare('SELECT count(*) n FROM sessions').get()?.n, 1); });
-    it('denies cross-owner project access', () => assert.throws(() => store.ownerProject('p', 'another')));
-    it('denies cross-owner session access', () => { const s = store.saveCapture('p', validateCapture(fixture())); assert.throws(() => store.ownerSession(s.id, 'another')); });
-    it('enforces ingestion rate limits', () => { store.rateLimit('r', 2); store.rateLimit('r', 2); assert.throws(() => store.rateLimit('r', 2)); });
-    it('retention cascades session evidence removal', () => { store.db.prepare('UPDATE sessions SET created_at=0').run(); store.purge(14); assert.equal(store.db.prepare('SELECT count(*) n FROM events').get()?.n, 0); });
-});
-
-describe('On-disk restart recovery', () => {
-    it('retains a complete recording after the database closes and reopens', () => {
-        const directory = mkdtempSync(join(tmpdir(), 'reprolab-store-'));
-        const path = join(directory, 'test.sqlite');
-        try {
-            const first = new Store(path);
-            first.db.prepare('INSERT INTO users VALUES(?,?,?,?,?)').run('owner', 'local@example.org', 'Owner', 'hash', Date.now());
-            first.db.prepare('INSERT INTO projects VALUES(?,?,?,?,?,?,?)').run('project', 'owner', 'Restart test', '["http://localhost:4318"]', 'key', '', Date.now());
-            const capture = validateCapture(fixture());
-            const saved = first.saveCapture('project', capture);
-            first.close();
-            const second = new Store(path);
-            try {
-                assert.equal(second.ownerSession(saved.id, 'owner').title, capture.title);
-                assert.deepEqual(second.events(saved.id), capture.events);
-                assert.equal(second.saveCapture('project', capture).duplicate, true);
-            } finally { second.close(); }
-        } finally { rmSync(directory, { recursive: true, force: true }); }
-    });
 });

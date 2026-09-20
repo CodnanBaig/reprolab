@@ -2,28 +2,35 @@
   "name": "reprolab",
   "version": "0.1.0",
   "private": true,
-  "description": "A privacy-first bug recorder, visual replay workbench and regression-test generator.",
-  "type": "module",
+  "description": "A privacy-first browser evidence workbench built with Next.js and MongoDB.",
   "packageManager": "pnpm@10.12.1",
   "engines": {
     "node": ">=22.16.0"
   },
   "scripts": {
-    "dev": "node --env-file-if-exists=.env --experimental-strip-types --watch src/server.ts",
-    "start": "node --env-file-if-exists=.env --experimental-strip-types src/server.ts",
-    "build": "node scripts/build.mjs",
-    "start:built": "node --env-file-if-exists=.env dist/src/server.js",
-    "test": "node --experimental-strip-types --test tests/*.test.ts",
-    "test:coverage": "node --experimental-strip-types --experimental-test-coverage --test-coverage-exclude=\"tests/**\" --test tests/*.test.ts",
+    "dev": "next dev",
+    "start": "next start",
+    "build": "next build",
+    "test": "tsx --test tests/core.test.ts",
+    "test:coverage": "tsx --test --experimental-test-coverage --test-coverage-exclude=\"tests/**\" tests/core.test.ts",
     "test:browser": "python3 tests/browser_test.py",
     "typecheck": "tsc --noEmit",
-    "check": "pnpm run check:syntax && pnpm test && pnpm run build",
+    "check": "pnpm run check:syntax && pnpm test && pnpm run typecheck && pnpm run build",
     "test:browser:memory": "python3 tests/browser_memory_test.py",
     "check:syntax": "node scripts/check-syntax.mjs",
-    "admin:reset-password": "node --env-file-if-exists=.env --experimental-strip-types scripts/admin.ts"
+    "admin:reset-password": "node --env-file-if-exists=.env.local --import tsx scripts/admin.ts"
+  },
+  "dependencies": {
+    "mongodb": "7.6.0",
+    "next": "16.3.5",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
   },
   "devDependencies": {
     "@types/node": "24.0.4",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "tsx": "4.21.0",
     "typescript": "5.8.3"
   },
   "license": "MIT"

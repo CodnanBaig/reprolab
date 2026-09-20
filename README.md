@@ -4,20 +4,23 @@
 
 ReproLab is a self-hosted browser bug workbench. Start a recording, reproduce the failure, inspect a sanitized visual timeline, and export a Playwright regression-test draft. It includes a real broken-checkout sandbox, not a dashboard filled with fake telemetry.
 
-**Status: v0.1 working developer prototype.** No hosted service, subscription, API key, or external database is required for the core workflow. There is no public production deployment. See [verification](#verification) for exactly what was and was not tested.
+**Status: v0.1 working developer prototype.** The core workflow requires a MongoDB deployment but no hosted ReproLab service, subscription, or external API key. There is no public production deployment. See [verification](#verification) for exactly what was and was not tested.
 
 ![ReproLab replay workbench](docs/screenshots/desktop-replay.png)
 *Actual interface rendered in Chromium using an isolated synthetic checkout recording. This is a test fixture, not customer traffic.*
 
 ## Run it
 
-Install **Node.js 22.16 or newer with `node:sqlite` support** and **pnpm 10**, then:
+Install **Node.js 22.16 or newer**, **pnpm 10**, and configure a MongoDB Atlas connection in `.env.local`:
 
 ```bash
-pnpm start
+cp .env.example .env.local
+# Add MONGODB_URI to .env.local. Never commit this file.
+pnpm install --frozen-lockfile
+pnpm dev
 ```
 
-Open **http://localhost:4318**. No dependency installation is necessary for this runtime command: the application has **zero runtime package dependencies**. Run `pnpm install --frozen-lockfile` before development checks so the pinned TypeScript tooling is available. Node 22 may print experimental notices for SQLite and TypeScript stripping; they are expected on the tested version.
+Open **http://localhost:3000**. ReproLab is a Next.js App Router application with a Node.js server runtime and MongoDB persistence. The database connection remains server-only; the client bundle never receives `MONGODB_URI`.
 
 1. Choose **Create workspace** and create a local account. Passwords require at least 12 characters.
 2. Select **Record a session** to open the included Orbit Store sandbox.
@@ -29,14 +32,14 @@ Open **http://localhost:4318**. No dependency installation is necessary for this
 
 The sandbox automatically creates its own project and ingestion key in your workspace. Its sample email input is masked; use synthetic information anyway.
 
-For a compiled server:
+For a production server:
 
 ```bash
 pnpm run build
-pnpm run start:built
+pnpm start
 ```
 
-Development with restart-on-change: `pnpm run dev`. Runtime data is stored in `.data/reprolab.sqlite` and persists across restarts. Keep the database directory private and on a persistent disk.
+Development with restart-on-change: `pnpm run dev`. Runtime data is stored in the configured MongoDB database. Keep its Atlas credentials in your local environment or deployment secret store.
 
 ## What works in this version
 
@@ -52,7 +55,7 @@ Development with restart-on-change: `pnpm run dev`. Runtime data is stored in `.
 | Exports | JSON evidence and Markdown issue report; no LLM account needed |
 | Source maps | Private flat-v3 map upload by asset URL + release; original-position lookup |
 | Sharing | Explicit expiring, revocable links; notes/source maps/owner IDs excluded |
-| Persistence | SQLite transactions, upload deduplication, retention purge, foreign-key cascades |
+| Persistence | MongoDB collections and indexes, upload deduplication, retention purge, application-managed cascades |
 | Optional GitHub integration | Server-side issue creation behind explicit confirmation, repo allowlist and rate limit; **live integration not verified here** |
 | Chrome extension | Manual active-tab recorder source included; **not installed or device-qualified here** |
 
@@ -69,7 +72,7 @@ Normal text is masked unless the element explicitly has `data-repro-public`. Tha
 Create a project in **Install recorder**, specify exact allowed website origins, and copy its ingestion-only key. Load `/sdk/reprolab.js` from your ReproLab instance, then call the SDK **inside your own explicit consent/start action**:
 
 ```html
-<script src="http://localhost:4318/sdk/reprolab.js"></script>
+<script src="http://localhost:3000/sdk/reprolab.js"></script>
 ```
 
 ```js
@@ -79,7 +82,7 @@ let recording;
 function startBugRecording() {
   recording = ReproLab.start({
     consent: true,
-    endpoint: 'http://localhost:4318/api/ingest',
+    endpoint: 'http://localhost:3000/api/ingest',
     captureKey: 'YOUR_PROJECT_CAPTURE_KEY',
     title: 'Checkout fails after adding a product',
     release: 'checkout-v1'
@@ -135,8 +138,8 @@ The source is included and its recorder is byte-checked against the SDK. Extensi
 The core app works with this integration disabled. For a trusted self-hosted instance:
 
 ```bash
-cp .env.example .env
-# Edit .env locally; never commit it:
+cp .env.example .env.local
+# Edit .env.local locally; never commit it:
 # GITHUB_TOKEN=<a fine-grained token limited to the intended repository>
 # GITHUB_ALLOWED_REPOS=CodnanBaig/reprolab
 pnpm start
@@ -146,13 +149,11 @@ Set the same `owner/repo` in Project settings. Review the exported report, then 
 
 ## Verification
 
-The dated [build report](BUILD_REPORT.md) separates the original build evidence from later publication status:
+The dated [build report](BUILD_REPORT.md) records the pre-migration prototype evidence; it does not validate this Next.js/MongoDB migration. Run the commands below against the configured MongoDB environment before treating it as accepted:
 
-- **69 Node tests passed**: unit tests plus real localhost HTTP/SQLite integration and ownership/security tests.
-- **8 isolated Chromium tests passed**: actual recorder and UI with synthetic transport; includes input masking, replay, triage, notes, and responsive layout.
-- Strict server/test TypeScript checks, browser JS syntax checks, SDK/extension parity, and a compiled build passed.
-- **7 full browser journeys passed locally on 2026-09-19** against a disposable localhost server and SQLite database. The dated build report preserves the earlier managed-browser block and the later successful rerun separately.
-- GitHub Actions passed both quality and browser jobs on the private publication branch on 2026-09-19. No `main` release run, extension installation, authenticated GitHub issue side effect, Docker runtime or public deployment is claimed.
+- Unit tests cover the privacy contract, capture validation, authentication primitives, exports, and source maps.
+- `pnpm run typecheck`, `pnpm run check:syntax`, and `pnpm run build` validate the Next.js application and shipped browser assets.
+- `pnpm run test:browser` requires `MONGODB_URI` and creates a uniquely named test database that it drops when the suite finishes.
 
 ```bash
 pnpm install --frozen-lockfile
@@ -176,13 +177,13 @@ CI is configured in `.github/workflows/ci.yml` for every push and pull request. 
 
 ## Architecture
 
-**TypeScript + Node native HTTP + SQLite**, with a browser-native JavaScript interface and recorder. This is not a Next.js/React scaffold. The no-runtime-package approach makes the first version directly runnable and keeps the core evidence pipeline easy to inspect.
+**Next.js App Router + React + TypeScript + MongoDB**, with browser-native JavaScript for the framework-independent recorder. Server APIs are Next.js route handlers using the Node.js runtime.
 
 ```text
 Instrumented app / manual extension
   └─ consent → recorder → client-side redaction → explicit upload
        └─ ingestion key + origin checks + bounds + server sanitization
-            └─ transactional SQLite session + events
+            └─ MongoDB capture document + indexed ownership records
                  ├─ owner-scoped investigation workbench
                  ├─ sandboxed-by-construction canvas reconstruction
                  ├─ private source-map lookup
@@ -203,7 +204,7 @@ pnpm install --frozen-lockfile
 pnpm start
 ```
 
-The repository remains private and is not a hosted ReproLab service. Local `.env` files, databases, test artifacts, dependencies and compiled output are ignored.
+The repository remains private and is not a hosted ReproLab service. Local `.env.local` files, test artifacts, dependencies, and compiled output are ignored.
 
 ## License
 

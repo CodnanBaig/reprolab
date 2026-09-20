@@ -2,15 +2,10 @@ services:
   reprolab:
     build: .
     ports:
-      - "127.0.0.1:4318:4318"
+      - "127.0.0.1:3000:3000"
     environment:
-      APP_ORIGIN: http://localhost:4318
-      # Required only because the container binds internally to 0.0.0.0.
-      # Host publication remains loopback-only. Do not expose this as public plaintext.
-      ALLOW_INSECURE_LAN: "1"
+      APP_ORIGIN: http://localhost:3000
+      MONGODB_URI: ${MONGODB_URI:?Set MONGODB_URI in .env.local or the deployment environment}
+      MONGODB_DB: ${MONGODB_DB:-reprolab}
       RETENTION_DAYS: "14"
-    volumes:
-      - reprolab-data:/app/.data
     restart: unless-stopped
-volumes:
-  reprolab-data:

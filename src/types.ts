@@ -42,7 +42,7 @@ export interface Project {
     id: string;
     owner_id: string;
     name: string;
-    origins: string;
+    origins: string[];
     key_hash: string;
     repo: string;
     created_at: number;
@@ -69,4 +69,11 @@ export interface StoredSession {
     created_at: number;
     client_id: string;
     github_url: string | null;
+}
+
+export interface Note {
+    id: string;
+    session_id: string;
+    body: string;
+    created_at: number;
 }

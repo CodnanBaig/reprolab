@@ -2,47 +2,38 @@
 
 ## Local configuration
 
-`pnpm start`, `pnpm run dev` and `pnpm run start:built` load `.env` when present. With no `.env`, the defaults are localhost port 4318 and `.data/reprolab.sqlite`.
+Next.js loads `.env.local` automatically. Copy the template, add the MongoDB Atlas URI locally, then install and start the app:
 
 ```bash
-cp .env.example .env
-pnpm start
+cp .env.example .env.local
+# Set MONGODB_URI in .env.local; never commit it.
+pnpm install --frozen-lockfile
+pnpm dev
 ```
 
-Keep the browser origin identical to `APP_ORIGIN`; `localhost` and `127.0.0.1` are different origins. If you change `PORT`, change `APP_ORIGIN` too. Do not commit `.env` or the database.
+Open `http://localhost:3000`. Keep `APP_ORIGIN` aligned with the browser origin: `localhost` and `127.0.0.1` are different origins.
 
 | Variable | Default | Notes |
 |---|---|---|
-| `HOST` | `127.0.0.1` | Private loopback; remote binding requires explicit transport choice |
-| `PORT` | `4318` | Server listening port |
-| `APP_ORIGIN` | `http://localhost:4318` | Exact dashboard origin for cookies/CSRF/shares |
-| `DATABASE_PATH` | `.data/reprolab.sqlite` | Persistent writable storage |
-| `RETENTION_DAYS` | `14` | Clamped to 1–90; capture retention, not account/map retention |
-| `COOKIE_SECURE` | `0` | Set to `1` behind remote HTTPS |
-| `ALLOW_INSECURE_LAN` | unset | Explicit temporary testing override; not safe public deployment |
-| `GITHUB_TOKEN` | unset | Optional fine-grained, server-only token |
+| `MONGODB_URI` | required | Atlas connection string; server-only secret |
+| `MONGODB_DB` | `reprolab` | Database name on the configured deployment |
+| `APP_ORIGIN` | `http://localhost:3000` | Exact dashboard origin for cookies, CSRF, and shares |
+| `RETENTION_DAYS` | `14` | Clamped 1–90; capture retention, not account/map retention |
+| `COOKIE_SECURE` | `0` | Set to `1` behind HTTPS |
+| `GITHUB_TOKEN` | unset | Optional fine-grained server-only token |
 | `GITHUB_ALLOWED_REPOS` | unset | Comma-separated exact `owner/repo` destinations |
 
-## Backup and recovery
+## Atlas setup
 
-For this single-node private prototype, the simplest consistent backup is a **stopped-server copy of the whole database directory**:
+Create a least-privilege Atlas database user for this application and allow network access from the deployment environment. ReproLab creates its own collections and indexes on first use. Do not put the URI in browser code, source control, a public issue, or client-accessible deployment variables.
 
-1. Stop the ReproLab process and ensure there are no other writers.
-2. Copy `.data/` to a private encrypted backup destination. Include SQLite auxiliary files if present.
-3. Restart the server.
-4. To restore, stop the process, preserve the current directory as a safety backup, replace it with the saved directory, restore file ownership/permissions, then restart.
-5. Verify login, project list, a recording and its event count before relying on the restored instance.
-
-A JSON evidence export is not a full account/database backup. It deliberately omits credentials, project keys, notes/source maps in some formats, and other system records. There is no “import all account state” endpoint in v0.1.
-
-Automated tests verify SQLite persistence after reopen and upload idempotency. A production backup scheduler, encrypted off-site rotation and restore drills are operator responsibilities, not configured here.
+For recovery, use your Atlas backup/restore policy. A JSON evidence export is not a complete backup: it deliberately omits account credentials, ingestion keys, and some supporting records. After restoring a database, verify login, project list, a recording, and its event count before relying on it.
 
 ## Local password recovery
 
-There is no hosted email-reset provider. The server operator can use:
+There is no hosted email-reset provider. The operator may reset one local account and revoke its sessions:
 
 ```bash
-# Prefer a secure environment/secrets mechanism rather than recording a real password in shell history.
 export REPRO_RESET_EMAIL='your-local-account@example.org'
 printf 'New password: '
 IFS= read -r -s REPRO_RESET_PASSWORD; printf '\n'
@@ -51,28 +42,21 @@ pnpm run admin:reset-password
 unset REPRO_RESET_PASSWORD REPRO_RESET_EMAIL
 ```
 
-The script updates the hash and revokes all existing sessions for that account. It runs locally only. Do not expose it as a public endpoint.
+The command uses `.env.local` for MongoDB configuration and never exposes a reset endpoint.
 
 ## Container
 
-`Dockerfile` and `compose.yml` are provided for an optional local container. Docker was not available/verified in this delivery environment.
+The Dockerfile builds Next.js standalone output. Compose binds the web application to `127.0.0.1:3000` and reads `MONGODB_URI` from the environment:
 
 ```bash
 docker compose up --build
 ```
 
-The compose mapping binds the host port to `127.0.0.1` and persists the SQLite directory in a named volume. Its explicit insecure transport override is for this loopback-only development mapping. Do not change the published host address to `0.0.0.0` without configuring a proper private TLS deployment.
-
-## Remote/private testing
-
-Use a persistent-disk VM/container behind an HTTPS reverse proxy; set the owned HTTPS origin and secure cookies. Restrict network enrollment/access before exposing registration. Add both the collector origin and the target application origin to the target's CSP where necessary. The instrumented application's origin must also be in the project's exact origin list.
-
-A hosted share link can only be reached if that instance itself is reachable. A localhost share does not magically become public. There is no hosted share proxy.
+MongoDB is external persistence, so the image has no database volume. For a remote/private deployment, inject `MONGODB_URI` and other server-only configuration through the host’s secret manager, configure Atlas network access, terminate HTTPS, set `APP_ORIGIN` to the HTTPS origin, and set `COOKIE_SECURE=1`.
 
 ## What not to do
 
-- Do not put this SQLite database on Vercel/Netlify function ephemeral storage.
-- Do not commit capture keys, `.env`, SQLite files or source maps from a proprietary target.
-- Do not store real customer information in the sample sandbox.
-- Do not treat an empty dashboard/server log as proof of browser correctness.
-- Do not describe the extension or external GitHub workflow as verified until you exercise them on your own target.
+- Do not commit `.env.local`, Atlas connection strings, capture keys, source maps, or real-user recordings.
+- Do not put `MONGODB_URI` or GitHub tokens in `NEXT_PUBLIC_*` variables.
+- Do not treat an empty dashboard or server log as browser acceptance evidence.
+- Do not describe the extension or external GitHub workflow as verified until you exercise them on a real target.

@@ -1,76 +1,50 @@
 # Architecture and engineering decisions
 
-## Modules
+## Stack
+
+ReproLab is a **Next.js App Router** application. React renders the `/` workbench shell and `/sandbox` fixture; the existing browser-native workbench and SDK scripts remain framework-independent so they can record another application without coupling it to React.
 
 | Module | Responsibility |
 |---|---|
-| `src/server.ts` | HTTP routing, sessions, ownership, CORS/CSRF, bounded body parsing, static files |
-| `src/store.ts` | SQLite schema, transactional capture save, deduplication, limits, retention |
+| `app/layout.tsx`, `app/page.tsx` | Root document metadata and Next.js workbench route |
+| `app/sandbox/page.tsx` | Real failed-checkout fixture rendered by Next.js |
+| `app/api/[...route]/route.ts` | Node-runtime Route Handlers: API, auth, CORS/CSRF, bounded JSON, ownership |
+| `src/store.ts` | MongoDB client reuse, indexes, persistence, retention and application-managed deletion |
 | `src/validation.ts` | Closed capture contract; validation before storage |
 | `src/privacy.ts` | Server-side redaction and selector/color allowlists |
-| `src/security.ts` | Scrypt, random tokens, token hashing, timing-safe verification |
+| `src/security.ts` | Scrypt, random tokens, token hashing and timing-safe verification |
 | `src/exports.ts` | Deterministic Playwright and Markdown generation |
-| `src/sourcemaps.ts` | Flat v3 parsing, base64 VLQ, generated-to-original position lookup |
+| `src/sourcemaps.ts` | Flat v3 parsing and generated-to-original lookup |
 | `public/sdk/reprolab.js` | Framework-independent recorder and client-side privacy boundary |
-| `public/app.js` | Workspace state, routing, accessible controls, canvas playback |
-| `public/sandbox*` | A real reproducible failed checkout, with a matching example source map |
-| `extension/` | Manual active-tab injection adapter; same SDK bytes |
-| `scripts/admin.ts` | Local operator-only password reset and session revocation |
+| `public/app.js` | Workbench state, hash routing, accessible controls and canvas playback |
+| `extension/` | Manual active-tab extension using recorder-parity source |
 
 ## Flow
 
-1. A workspace owner creates a project, obtaining a random ingestion-only key. The server stores a hash, not the raw key.
-2. A developer starts the SDK explicitly after consent. The SDK records a bounded in-memory event sequence and selected visual frames. It hooks errors, warnings, fetch/XHR, input changes, navigation and scroll.
-3. Input values are never read. Text is masked unless its direct element opts in. Private ancestors override opt-in.
-4. `stop()` restores patched APIs and removes listeners. It returns one stable capture. `upload()` stops if necessary and submits that capture; retries reuse the same client ID.
-5. The server validates the key, allowed website/capture origin, rate, body size and event shape. Unrecognized fields are not persisted.
-6. The store writes session metadata and event rows atomically. `(project_id, client_id)` is unique, preventing ordinary retry duplication.
-7. The owner loads the workbench. Frames are drawn to a canvas and events can be selected by time/kind. Generated code remains text for the developer to review, never server-executed code.
+1. A workspace owner creates a project and receives a random ingestion-only key. MongoDB stores only its SHA-256 hash.
+2. A developer explicitly starts the SDK after consent. It records bounded visual frames and sanitized events in memory.
+3. The Next.js ingestion Route Handler validates key, exact origin, rate, body size, and event shape before saving one capture document.
+4. A unique MongoDB index on `(project_id, client_id)` makes ordinary upload retries idempotent.
+5. The signed-in owner reads only records joined to their project. The workbench reconstructs visual nodes into a canvas; no recorded DOM executes.
+6. Sharing creates a hashed, expiring bearer token. The public response removes notes, source maps, project/client IDs, and external issue URLs.
 
-## Persistence model
+## MongoDB model
 
-- `users`: local identity and password hashes.
-- `auth_sessions`: hashed opaque tokens with expiry.
-- `projects`: owner, origins, optional GitHub repository, hashed ingestion key.
-- `sessions`: sanitized capture metadata, triage, fingerprint, optional external issue URL.
-- `events`: ordered per-session evidence.
-- `notes`: private investigation prose.
-- `shares`: token hashes, session reference and expiry.
-- `source_maps`: project + exact asset + release with uploaded map data.
-- `limits`: persisted time-bucket counters.
+- `users`: local identity, scrypt hashes, creation time; `email` is unique.
+- `auth_sessions`: hashed opaque tokens and expiry; expiry has a TTL index.
+- `projects`: owner, exact origins, optional GitHub repository, hashed ingestion key.
+- `sessions`: bounded sanitized event array, triage fields, fingerprint and optional issue URL; unique `(project_id, client_id)`.
+- `notes`, `shares`, and `source_maps`: separate owner-scoped supporting records.
+- `limits`: persisted time-bucket counters with a TTL index.
 
-Foreign keys cascade evidence deletion. WAL enables ordinary local concurrent readers; each upload is a bounded transaction. Default 14-day session retention is purged on requests at a ten-minute cadence. This is not a timed background daemon: an idle offline instance cleans up on its next request.
+MongoDB does not enforce cross-collection foreign keys. Project and session deletion explicitly removes dependent documents in the server layer. Capture events are stored in their bounded session document so a completed upload has one persistence write.
 
-## Important trade-offs
+## Runtime choices
 
-### Zero runtime dependencies, not framework maximalism
+Route handlers use Next.js's Node.js runtime because the MongoDB Node driver and cryptography require it. The Mongo client is reused through a process-global promise so requests share a pool instead of opening a connection each time. The route is dynamic, and API responses are `no-store`.
 
-The initial environment could execute Node and TypeScript but could not download third-party packages. This implementation uses built-in Node HTTP/SQLite and browser standards, so the runtime does not depend on an unavailable framework stack. Server contracts are strict TypeScript. The frontend/SDK are JavaScript with parse checks and browser tests, not a Next.js/React application.
+Docker builds the Next.js standalone output. The container has no database volume: MongoDB Atlas is the persistent store, and `MONGODB_URI` must be injected by the deployment environment.
 
-A future UI port can keep the data, privacy and recorder contracts. It is not required for the implemented workflow. Do not market the framework choice as a performance benchmark; none was measured.
+## Deliberate boundaries
 
-### Reconstruction rather than executable DOM replay
-
-A small visual-node schema deliberately sacrifices pixel fidelity. The viewer needs no injected HTML, iframes, remote assets, or script re-execution. It is inspectable and bounded, but does not support iframe/shadow-DOM/media replay. Describe it accurately in a portfolio.
-
-### Deterministic test drafts, not an LLM wrapper
-
-The generator emits actions from captured stable selectors. It preserves the initial navigation URL and requires safe fixture values for masked inputs. It cannot know application-specific expectations, recreate third-party state, infer correct auth, or guarantee selectors survived a redesign. Generic “no error / no 5xx” assertions are a starting point.
-
-### Single-node storage
-
-SQLite with synchronous bounded transactions is intentionally suitable for a personal/private developer tool. It is not a distributed event platform. Horizontal scaling would need queueing, shared database/object storage, distributed quotas and a redesigned ingestion pipeline. Those are future work, not simulated features.
-
-### Clear boundary between application auth and recorder auth
-
-A signed-in user manages projects and reads evidence. A recorder key only submits evidence to one project. Expiring shares grant a restricted read capability to exactly one recording. Source maps and notes never inherit share access.
-
-## Capacity boundaries
-
-- SDK: 5 minutes, approximately 2.3 million serialized character units, at most 2,200 normal events and up to 35 frames. A final manual frame may add one event.
-- SDK frames: at most 250 visible nodes. Server accepts at most 350 nodes per frame.
-- Server upload: 3 MB actual bytes and 2,500 events maximum.
-- Maximum 20 projects per user; 1,000 captures per project; session list returns the newest 250 matching entries.
-- Rate limits: 60 ingestions per project/minute; 15 auth attempts per address/15 minutes; 5 confirmed GitHub writes per user/minute.
-
-Multibyte text can hit the server byte limit before the client's character-based budget. Upload failures are surfaced and the in-memory capture is preserved for explicit retry; cross-reload recovery is not implemented.
+The replay is a visual layout reconstruction, not video or DOM playback. A generated Playwright file is a reviewable draft, not server-executed code or a promise of correct business assertions. Atlas credentials are server-only and must never be prefixed with `NEXT_PUBLIC_`.

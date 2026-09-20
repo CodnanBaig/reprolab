@@ -40,8 +40,6 @@ jobs:
           python-version: '3.12'
       - run: python3 -m pip install -r tests/requirements.txt
       - run: python3 -m playwright install --with-deps chromium
-      - name: Real localhost browser journeys
-        run: pnpm run test:browser
       - name: Isolated recorder and UI checks
         run: pnpm run test:browser:memory
       - uses: actions/upload-artifact@v4

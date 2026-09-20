@@ -1,13 +1,14 @@
 node_modules/
 .venv/
 .data/
+.next/
 dist/
+*.tsbuildinfo
 .env
 .env.*
 !.env.example
 __pycache__/
 *.pyc
 test-results/
-*.sqlite*
 *.log
 *.zip

@@ -1,5 +1,5 @@
-import { bounded, color, safeUrl, selector, text } from './privacy.ts';
-import type { Capture, CaptureEvent, VisualFrame, VisualNode } from './types.ts';
+import { bounded, color, safeUrl, selector, text } from './privacy';
+import type { Capture, CaptureEvent, VisualFrame, VisualNode } from './types';
 export class HttpError extends Error {
     status: number;
     constructor(status: number, message: string) { super(message); this.status = status; }
