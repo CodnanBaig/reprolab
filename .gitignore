@@ -12,3 +12,4 @@ __pycache__/
 test-results/
 *.log
 *.zip
+.vercel
