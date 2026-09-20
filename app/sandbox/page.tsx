@@ -1,4 +1,4 @@
-import Script from 'next/script';
+import { SandboxScripts } from '../legacy-scripts';
 
 export const metadata = { title: 'ReproLab • Recording sandbox' };
 
@@ -55,8 +55,7 @@ export default function SandboxPage() {
         </section>
       </main>
       <div id="toast" role="status" aria-live="polite" />
-      <Script src="/sdk/reprolab.js" strategy="afterInteractive" />
-      <Script src="/sandbox.js" strategy="afterInteractive" type="module" />
+      <SandboxScripts />
     </div>
   );
 }
